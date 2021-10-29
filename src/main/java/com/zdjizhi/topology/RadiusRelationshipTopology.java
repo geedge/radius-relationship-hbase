@@ -2,9 +2,8 @@ package com.zdjizhi.topology;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.zdjizhi.utils.functions.FilterNullFunction;
-import com.zdjizhi.utils.functions.GetAccountMapFunction;
-import com.zdjizhi.utils.functions.TimerFunction;
+import com.zdjizhi.utils.functions.*;
+
 import com.zdjizhi.utils.kafka.Consumer;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -31,11 +30,17 @@ public class RadiusRelationshipTopology {
 
         DataStream<String> filterOriginalData = streamSource.filter(new FilterNullFunction()).name("FilterOriginalData");
 
-        DataStream<Tuple2<String, String>> getRadiusAccount = filterOriginalData.map(new GetAccountMapFunction()).name("GetRadiusAccount");
+        DataStream<Tuple2<String, String>> getObject = filterOriginalData.map(new ParseFunction()).name("ParseJson");
+
+        DataStream<Tuple2<String, String>> getRadiusAccount = getObject.map(new GetAccountMapFunction()).name("GetRadiusAccount");
 
         KeyedStream<Tuple2<String, String>, String> tuple2StringKeyedStream = getRadiusAccount.keyBy(value -> value.f0);
 
+        KeyedStream<Tuple2<String, String>, String> accountWithFrameip = getObject.keyBy(value -> value.f1);
+
         tuple2StringKeyedStream.process(new TimerFunction()).name("UpdateHBase");
+
+        accountWithFrameip.process(new TimerFunctionAccountWithFramedIp()).name("UpdateAccountHBase");
 
         try {
             environment.execute("RADIUS-RELATIONSHIP-HBASE");

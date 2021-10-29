@@ -76,10 +76,10 @@ public class HBaseUtils {
      *
      * @param putList puts list
      */
-    public static void insertData(List<Put> putList) {
+    public static void insertData(List<Put> putList,String tablename) {
         Table table = null;
         try {
-            table = connection.getTable(TableName.valueOf("sub:" + RadiusRelationshipConfig.HBASE_TABLE_NAME));
+            table = connection.getTable(TableName.valueOf(tablename));
             table.put(putList);
             logger.warn("Update HBase data SUCCESS! Update size ：" + putList.size());
             putList.clear();
@@ -97,14 +97,32 @@ public class HBaseUtils {
 
     }
 
+    public static void insertData(Put put,String tablename) {
+        Table table = null;
+        try {
+            table = connection.getTable(TableName.valueOf(tablename));
+            table.put(put);
+           // logger.warn("Update HBase data SUCCESS! Update size ：" + putList.size());
+        } catch (IOException e) {
+            logger.error("Update HBase data ERROR! Message :" + e);
+        } finally {
+            try {
+                if (table != null) {
+                    table.close();
+                }
+            } catch (IOException e) {
+                logger.error("Close HBase.table ERROR! Message:" + e);
+            }
+        }
 
+    }
     /**
      * 获取所有的 key value
      */
     private static void getAll() {
         long begin = System.currentTimeMillis();
         try {
-            Table table = connection.getTable(TableName.valueOf("sub:" + RadiusRelationshipConfig.HBASE_TABLE_NAME));
+            Table table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_TABLE_NAME));
             Scan scan2 = new Scan();
             ResultScanner scanner = table.getScanner(scan2);
             for (Result result : scanner) {

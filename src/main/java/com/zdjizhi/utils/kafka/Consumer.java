@@ -23,6 +23,7 @@ public class Consumer {
         properties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
+
         CertUtils.chooseCert(RadiusRelationshipConfig.KAFKA_SOURCE_PROTOCOL,properties);
 
         return properties;

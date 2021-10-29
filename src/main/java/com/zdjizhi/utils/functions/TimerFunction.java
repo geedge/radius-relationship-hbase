@@ -31,7 +31,7 @@ public class TimerFunction extends KeyedProcessFunction<String, Tuple2<String, S
     @Override
     public void onTimer(long timestamp, OnTimerContext ctx, Collector<Object> out) throws Exception {
         if (putList.size() != 0) {
-            insertData(putList);
+            insertData(putList,RadiusRelationshipConfig.HBASE_TABLE_NAME);
             putList.clear();
         }
         ctx.timerService().registerProcessingTimeTimer(timestamp + (RadiusRelationshipConfig.HBASE_TICK_TUPLE_FREQ_SECS * 1000));
