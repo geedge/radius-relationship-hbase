@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.zdjizhi</groupId>
-    <artifactId>radius-relationship-hbase</artifactId>
-    <version>210908-security</version>
+    <artifactId>radius-relation</artifactId>
+    <version>21-12-06</version>
 
-    <name>radius-relationship-hbase</name>
+    <name>radius-relation</name>
     <url>http://www.example.com</url>
 
 
@@ -38,78 +38,10 @@
         <hadoop.version>2.7.1</hadoop.version>
         <kafka.version>1.0.0</kafka.version>
         <hbase.version>2.2.3</hbase.version>
-        <!--<scope.type>provided</scope.type>-->
-        <scope.type>compile</scope.type>
+        <scope.type>provided</scope.type>
+        <!--<scope.type>compile</scope.type>-->
     </properties>
 
-    <build>
-        <plugins>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.2</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.zdjizhi.topology.RadiusRelationshipTopology</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>io.github.zlika</groupId>
-                <artifactId>reproducible-build-maven-plugin</artifactId>
-                <version>0.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>strip-jar</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>properties</directory>
-                <includes>
-                    <include>**/*.properties</include>
-                    <include>**/*.xml</include>
-                </includes>
-                <filtering>false</filtering>
-            </resource>
-
-            <resource>
-                <directory>src\main\java</directory>
-                <includes>
-                    <include>log4j.properties</include>
-                </includes>
-                <filtering>false</filtering>
-            </resource>
-        </resources>
-    </build>
 
     <dependencies>
 
@@ -134,15 +66,6 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.70</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-table -->
-        <!--<dependency>-->
-            <!--<groupId>org.apache.flink</groupId>-->
-            <!--<artifactId>flink-table</artifactId>-->
-            <!--<version>${flink.version}</version>-->
-            <!--<type>pom</type>-->
-            <!--<scope>${scope.type}</scope>-->
-        <!--</dependency>-->
 
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-core -->
         <dependency>
@@ -174,7 +97,6 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka_2.12</artifactId>
             <version>${flink.version}</version>
-            <scope>${scope.type}</scope>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-java -->
@@ -198,6 +120,22 @@
                 <exclusion>
                     <artifactId>log4j-over-slf4j</artifactId>
                     <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-io</artifactId>
+                    <groupId>commons-io</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-lang3</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>netty</artifactId>
+                    <groupId>io.netty</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>netty-all</artifactId>
+                    <groupId>io.netty</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -283,5 +221,67 @@
         </dependency>
 
     </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <!-- The semantics of this option are reversed, see MCOMPILER-209. -->
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                    <compilerArgs>
+                        <!-- Prevents recompilation due to missing package-info.class, see MCOMPILER-205 -->
+                        <arg>-Xpkginfo:always</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>radius-relation-21-12-06</finalName>
+                            <transformers combine.children="append">
+                                <!-- The service transformer is needed to merge META-INF/services files -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.zdjizhi.topology.RadiusRelation</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>properties</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+
+            <resource>
+                <directory>src\main\java</directory>
+                <includes>
+                    <include>log4j.properties</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+    </build>
 </project>
 

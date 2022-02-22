@@ -6,11 +6,17 @@ import com.zdjizhi.utils.system.RadiusRelationshipConfigurations;
 /**
  * @author Administrator
  */
-public class RadiusRelationshipConfig {
+public  class   RadiusRelationshipConfig {
+
+
     /**
      * 4- Accounting-Request(账户授权)
      */
+
+
     public static final int ACCOUNTING_REQUEST = 4;
+
+
     /**
      * radius_packet_type
      */
@@ -19,6 +25,9 @@ public class RadiusRelationshipConfig {
      * 1、开始计费
      */
     public static final int START_BILLING = 1;
+
+    public static final int UPDATE_BILLING = 3;
+
     /**
      * radius_acct_status_type
      */
@@ -27,8 +36,7 @@ public class RadiusRelationshipConfig {
     /**
      * System
      */
-    public static final Integer HBASE_TICK_TUPLE_FREQ_SECS = RadiusRelationshipConfigurations.getIntProperty(0, "hbase.tick.tuple.freq.secs");
-    public static final String HBASE_TABLE_NAME = RadiusRelationshipConfigurations.getStringProperty(0, "hbase.table.name");
+    public static final String HBASE_FRAMEDIP_TABLE_NAME = RadiusRelationshipConfigurations.getStringProperty(0, "hbase.framedip.table.name");
 
     public static final String HBASE_ACCOUNT_TABLE_NAME = RadiusRelationshipConfigurations.getStringProperty(0, "hbase.account.table.name");
 
@@ -37,6 +45,9 @@ public class RadiusRelationshipConfig {
      */
     public static final String INPUT_KAFKA_SERVERS = RadiusRelationshipConfigurations.getStringProperty(0, "input.kafka.servers");
     public static final String HBASE_ZOOKEEPER_SERVERS = RadiusRelationshipConfigurations.getStringProperty(0, "hbase.zookeeper.servers");
+    //public static final String HBASE_ZOOKEEPER_PORT = RadiusRelationshipConfigurations.getStringProperty(0, "hbase.zookeeper.port");
+
+
     public static final String GROUP_ID = RadiusRelationshipConfigurations.getStringProperty(0, "group.id");
     public static final String INPUT_KAFKA_TOPIC = RadiusRelationshipConfigurations.getStringProperty(0, "input.kafka.topic");
 
