@@ -17,14 +17,14 @@ public class Consumer {
         Properties properties = new Properties();
         properties.put("bootstrap.servers", RadiusRelationshipConfig.INPUT_KAFKA_SERVERS);
         properties.put("group.id", RadiusRelationshipConfig.GROUP_ID);
-        properties.put("session.timeout.ms", "60000");
-        properties.put("max.poll.records", 3000);
-        properties.put("max.partition.fetch.bytes", 31457280);
+        properties.put("session.timeout.ms", RadiusRelationshipConfig.SESSION_TIMEOUT_MS);
+        properties.put("max.poll.records", RadiusRelationshipConfig.MAX_POLL_RECORDS);
+        properties.put("max.partition.fetch.bytes", RadiusRelationshipConfig.MAX_PARTITION_FETCH_BYTES);
         properties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
 
-        CertUtils.chooseCert(RadiusRelationshipConfig.KAFKA_SOURCE_PROTOCOL,properties);
+        CertUtils.chooseCert(RadiusRelationshipConfig.INPUT_KAFKA_SERVERS, properties);
 
         return properties;
     }
