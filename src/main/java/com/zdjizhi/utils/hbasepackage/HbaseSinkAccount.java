@@ -93,7 +93,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
         if (AccountWithIpMap.containsKey(key)) {
             Radius radius = AccountWithIpMap.get(key);
 
-            if (radius.getLast_update_time() < event_time) {
+            if (radius.getLast_update_time() <= event_time) {
                 if(acct_status_type==radius.getAcct_status_type()) {
 
                     if (!radius.getFramed_ip().equals(framedIp)) {

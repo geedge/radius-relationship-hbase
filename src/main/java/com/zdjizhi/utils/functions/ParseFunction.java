@@ -33,12 +33,15 @@ public class ParseFunction implements MapFunction<String, Tuple6<String,String,S
                 if (StringUtil.isNotBlank(message)) {
                     radiusMassage = JSON.parseObject(message, RadiusMassage.class);
 
-                    if(radiusMassage.getRadius_framed_ip()!=null && radiusMassage.getRadius_account()!=null && radiusMassage.getRadius_event_timestamp()!=null){
+                        if(radiusMassage.getRadius_framed_ip()!=null && radiusMassage.getRadius_account()!=null ){
 
                         if (RadiusRelationshipConfig.ACCOUNTING_REQUEST == radiusMassage.getRadius_packet_type()){
                             String framedIp=radiusMassage.getRadius_framed_ip();
                             String account=radiusMassage.getRadius_account();
-                            Long event_time = radiusMassage.getRadius_event_timestamp();
+                            long event_time = radiusMassage.getRadius_event_timestamp();
+                            if(event_time==0){
+                                event_time=radiusMassage.getCommon_end_time();
+                            }
                             int status =radiusMassage.getRadius_acct_status_type();
                             int onff_status = 1;
                             if (status == 2) {

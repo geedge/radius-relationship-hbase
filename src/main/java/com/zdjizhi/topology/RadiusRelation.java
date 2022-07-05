@@ -41,7 +41,7 @@ public class RadiusRelation {
 
         accountWithFrameip.addSink(new HbaseSinkAccount(RadiusRelationshipConfig.HBASE_ZOOKEEPER_SERVERS));
         try {
-            environment.execute("RADIUS-RELATIONSHIP-HBASE-V2-t");
+            environment.execute("RADIUS-RELATIONSHIP-HBASE-V2");
         } catch (Exception e) {
             logger.error("This Flink task start ERROR! Exception information is :" + e);
         }

@@ -94,7 +94,7 @@ public class HbaseSinkFramedip extends RichSinkFunction<Tuple6<String,String,Str
             if (IpWithAccountMap.containsKey(key)) {
                 Radius radius = IpWithAccountMap.get(key);
 
-                if (radius.getLast_update_time() < event_time) {
+                if (radius.getLast_update_time() <= event_time) {
 
                     if(acct_status_type==radius.getAcct_status_type()) {
 
@@ -164,6 +164,7 @@ public class HbaseSinkFramedip extends RichSinkFunction<Tuple6<String,String,Str
                     put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(event_time));
                     put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
                     table.put(put);
+
                     IpWithAccountMap.put(key, radius);
                 } catch (Exception e) {
                     log.error(e.toString());
