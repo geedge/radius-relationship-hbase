@@ -2,7 +2,7 @@ package com.zdjizhi.utils.hbasepackage;
 
 import com.zdjizhi.common.RadiusRelationshipConfig;
 import com.zdjizhi.pojo.Radius;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -18,7 +18,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,String,String,Long,Integer>> implements Serializable, SinkFunction<Tuple6<String,String,String,String,Long,Integer>> {
+public class HbaseSinkAccount extends RichSinkFunction<Tuple7<String,String,String,String,Long,Integer,Integer>> implements Serializable, SinkFunction<Tuple7<String,String,String,String,Long,Integer,Integer>> {
     private Logger log;
 
     private String hbase_zookeeper_host;
@@ -38,7 +38,9 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
 
         org.apache.hadoop.conf.Configuration configuration = HBaseConfiguration.create();
         configuration.set("hbase.zookeeper.quorum", hbase_zookeeper_host);
-
+        configuration.set("hbase.rpc.timeout", String.valueOf(RadiusRelationshipConfig.HBASE_RPC_TIMEOUT));
+        configuration.set("zookeeper.recovery.retry", "1");
+        configuration.set("hbase.client.retries.number", "1");
         connection = ConnectionFactory.createConnection(configuration);
         admin = connection.getAdmin();
 
@@ -51,10 +53,13 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
             scan.addColumn("radius".getBytes(), "first_found_time".getBytes());
             scan.addColumn("radius".getBytes(), "last_update_time".getBytes());
             scan.addColumn("radius".getBytes(), "acct_status_type".getBytes());
-
+            scan.addColumn("common".getBytes(), "vsys_id".getBytes());
+            if (RadiusRelationshipConfig.HBASE_SCAN_LIMIT != 0) {
+                scan.setLimit(RadiusRelationshipConfig.HBASE_SCAN_LIMIT);
+            }
             ResultScanner scanner = table.getScanner(scan);
             for (Result result : scanner) {
-                if( result.containsColumn("radius".getBytes(), "framed_ip".getBytes())  && result.containsColumn("radius".getBytes(), "account".getBytes()) && result.containsColumn("radius".getBytes(), "last_update_time".getBytes())   && result.containsColumn("radius".getBytes(), "first_found_time".getBytes())  && result.containsColumn("radius".getBytes(), "acct_status_type".getBytes()) ) {
+                if(   result.containsColumn("radius".getBytes(), "framed_ip".getBytes())  && result.containsColumn("radius".getBytes(), "account".getBytes()) && result.containsColumn("radius".getBytes(), "last_update_time".getBytes())   && result.containsColumn("radius".getBytes(), "first_found_time".getBytes())  && result.containsColumn("radius".getBytes(), "acct_status_type".getBytes()) ) {
 
                     Radius radius = new Radius();
                     String key = Bytes.toString(result.getRow());
@@ -64,12 +69,14 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                     Long first_found_time = Bytes.toLong(CellUtil.cloneValue(result.getColumnLatestCell(Bytes.toBytes("radius"), Bytes.toBytes("first_found_time"))));
                     Long last_update_time = Bytes.toLong(CellUtil.cloneValue(result.getColumnLatestCell(Bytes.toBytes("radius"), Bytes.toBytes("last_update_time"))));
                     int acct_status_type = Bytes.toInt(CellUtil.cloneValue(result.getColumnLatestCell(Bytes.toBytes("radius"), Bytes.toBytes("acct_status_type"))));
-
+                    int vsys_id =Bytes.toInt(CellUtil.cloneValue(result.getColumnLatestCell(Bytes.toBytes("common"), Bytes.toBytes("vsys_id"))));
                     radius.setAccount(account);
                     radius.setFramed_ip(framedip);
                     radius.setFirst_found_time(first_found_time);
                     radius.setLast_update_time(last_update_time);
                     radius.setAcct_status_type(acct_status_type);
+                    radius.setVsys_id(vsys_id);
+
                     AccountWithIpMap.put(key, radius);
                 }
             }
@@ -81,7 +88,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
         }
     }
 
-    public void invoke(Tuple6<String,String,String,String,Long,Integer> value, Context context) throws Exception {
+    public void invoke(Tuple7<String,String,String,String,Long,Integer,Integer> value, Context context) throws Exception {
         // 按 project:table 归纳
 
         String key = value.f1;
@@ -89,6 +96,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
         String account = value.f3;
         Long event_time = value.f4;
         int acct_status_type = value.f5;
+        int vsys_id = value.f6;
 
         if (AccountWithIpMap.containsKey(key)) {
             Radius radius = AccountWithIpMap.get(key);
@@ -100,7 +108,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                         radius.setLast_update_time(event_time);
                         radius.setFramed_ip(framedIp);
                         radius.setAcct_status_type(acct_status_type);
-
+                        radius.setVsys_id(vsys_id);
                         Table table = null;
                         try {
                             table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_ACCOUNT_TABLE_NAME));
@@ -110,6 +118,8 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                             put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
                             put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(radius.getFirst_found_time()));
                             put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
+                            put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
+
                             table.put(put);
                             //     IpWithAccountMap.put(radius.getFramed_ip(),radius);
                             AccountWithIpMap.put(key, radius);
@@ -126,6 +136,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                         radius.setLast_update_time(event_time);
                         radius.setFramed_ip(framedIp);
                         radius.setAcct_status_type(acct_status_type);
+                        radius.setVsys_id(vsys_id);
 
                         Table table = null;
                         try {
@@ -136,6 +147,8 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                             put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
                             put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(radius.getFirst_found_time()));
                             put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
+                            put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
+
                             table.put(put);
                             //     IpWithAccountMap.put(radius.getFramed_ip(),radius);
                             AccountWithIpMap.put(key, radius);
@@ -154,6 +167,7 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
             radius.setAccount(account);
             radius.setFirst_found_time(event_time);
             radius.setAcct_status_type(acct_status_type);
+            radius.setVsys_id(vsys_id);
 
             Table table = null;
             try {
@@ -164,6 +178,8 @@ public class HbaseSinkAccount extends RichSinkFunction<Tuple6<String,String,Stri
                 put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
                 put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(event_time));
                 put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
+                put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
+
                 table.put(put);
                 AccountWithIpMap.put(key, radius);
             } catch (Exception e) {

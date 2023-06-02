@@ -8,7 +8,7 @@ import com.zdjizhi.utils.functions.ParseFunction;
 import com.zdjizhi.utils.hbasepackage.HbaseSinkAccount;
 import com.zdjizhi.utils.hbasepackage.HbaseSinkFramedip;
 import com.zdjizhi.utils.kafka.Consumer;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
@@ -29,19 +29,19 @@ public class RadiusRelation {
 
         DataStreamSource<String> streamSource = environment.addSource(Consumer.getKafkaConsumer());
 
-        DataStream<Tuple6<String,String,String,String,Long,Integer>> getObject = streamSource.map(new ParseFunction()).name("ParseJson");
+        DataStream<Tuple7<String,String,String,String,Long,Integer,Integer>> getObject = streamSource.map(new ParseFunction()).name("ParseJson");
 
-        DataStream<Tuple6<String,String,String,String,Long,Integer>>  filterOriginalData = getObject.filter(new FilterNullFunction()).name("FilterOriginalData");
+        DataStream<Tuple7<String,String,String,String,Long,Integer,Integer>>  filterOriginalData = getObject.filter(new FilterNullFunction()).name("FilterOriginalData");
 
-        KeyedStream<Tuple6<String,String,String,String,Long,Integer>, String> FrameipWithaccount = filterOriginalData.keyBy(value -> value.f0);
+        KeyedStream<Tuple7<String,String,String,String,Long,Integer,Integer>, String> FrameipWithaccount = filterOriginalData.keyBy(value -> value.f0);
 
-        KeyedStream<Tuple6<String,String,String,String,Long,Integer>, String> accountWithFrameip = filterOriginalData.keyBy(value -> value.f1);
+        KeyedStream<Tuple7<String,String,String,String,Long,Integer,Integer>, String> accountWithFrameip = filterOriginalData.keyBy(value -> value.f1);
 
         FrameipWithaccount.addSink(new HbaseSinkFramedip(RadiusRelationshipConfig.HBASE_ZOOKEEPER_SERVERS));
 
         accountWithFrameip.addSink(new HbaseSinkAccount(RadiusRelationshipConfig.HBASE_ZOOKEEPER_SERVERS));
         try {
-            environment.execute("RADIUS-RELATIONSHIP-HBASE-V2");
+            environment.execute("RELATIONSHIP-RADIUS-ACCOUNT");
         } catch (Exception e) {
             logger.error("This Flink task start ERROR! Exception information is :" + e);
         }

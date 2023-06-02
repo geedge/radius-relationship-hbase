@@ -58,6 +58,9 @@ public  class   RadiusRelationshipConfig {
     public static final String KAFKA_USER = RadiusRelationshipConfigurations.getStringProperty(1, "kafka.user");
     public static final String KAFKA_PIN = RadiusRelationshipConfigurations.getStringProperty(1, "kafka.pin");
 
+    public static final int HBASE_SCAN_LIMIT = RadiusRelationshipConfigurations.getIntProperty(0, "hbase.scan.limit");
+    public static final int HBASE_RPC_TIMEOUT = RadiusRelationshipConfigurations.getIntProperty(0, "hbase.rpc.timeout");
+
 
 
 

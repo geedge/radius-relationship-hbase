@@ -7,6 +7,7 @@ public class Radius {
     private Long last_update_time;
     private Long first_found_time;
     private Integer acct_status_type;
+    private int vsys_id;
 
 
     public String getFramed_ip() {
@@ -47,5 +48,13 @@ public class Radius {
 
     public void setAcct_status_type(Integer acct_status_type) {
         this.acct_status_type = acct_status_type;
+    }
+
+    public int getVsys_id() {
+        return vsys_id;
+    }
+
+    public void setVsys_id(int vsys_id) {
+        this.vsys_id = vsys_id;
     }
 }

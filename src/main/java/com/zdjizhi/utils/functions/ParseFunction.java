@@ -8,7 +8,7 @@ import com.zdjizhi.common.RadiusRelationshipConfig;
 import com.zdjizhi.pojo.RadiusMassage;
 import com.zdjizhi.utils.StringUtil;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 
 import static cn.hutool.crypto.SecureUtil.md5;
 
@@ -20,12 +20,12 @@ import static cn.hutool.crypto.SecureUtil.md5;
  * @date 2021/5/2715:01
  */
 
-public class ParseFunction implements MapFunction<String, Tuple6<String,String,String, String,Long, Integer>> {
+public class ParseFunction implements MapFunction<String, Tuple7<String,String,String, String,Long, Integer,Integer>> {
     private static final Log logger = LogFactory.get();
 
 
     @Override
-    public Tuple6<String,String ,String, String,Long,Integer> map(String message) {
+    public Tuple7<String,String ,String, String,Long,Integer,Integer> map(String message) {
 
 
         RadiusMassage radiusMassage = new RadiusMassage();
@@ -38,6 +38,11 @@ public class ParseFunction implements MapFunction<String, Tuple6<String,String,S
                         if (RadiusRelationshipConfig.ACCOUNTING_REQUEST == radiusMassage.getRadius_packet_type()){
                             String framedIp=radiusMassage.getRadius_framed_ip();
                             String account=radiusMassage.getRadius_account();
+                            int vsys_id=radiusMassage.getCommon_vsys_id();
+                            if(vsys_id==0){
+
+                                radiusMassage.setCommon_vsys_id(1);
+                            }
                             long event_time = radiusMassage.getRadius_event_timestamp();
                             if(event_time==0){
                                 event_time=radiusMassage.getCommon_end_time();
@@ -47,9 +52,9 @@ public class ParseFunction implements MapFunction<String, Tuple6<String,String,S
                             if (status == 2) {
                                 onff_status = 2;
                             }
-                            String key_framedIp = md5(framedIp);
-                            String key_account = md5(account);
-                            return Tuple6.of(key_framedIp, key_account, framedIp, account, event_time, onff_status);
+                            String key_framedIp = md5(framedIp+vsys_id);
+                            String key_account = md5(account)+"|"+vsys_id;
+                            return Tuple7.of(key_framedIp, key_account, framedIp, account, event_time, onff_status,vsys_id);
 
                       }
                     }
@@ -60,6 +65,6 @@ public class ParseFunction implements MapFunction<String, Tuple6<String,String,S
                 logger.error("Radius日志条件过滤异常,异常信息为：" + re);
             }
 
-        return Tuple6.of("","","","",0L,0);
+        return Tuple7.of("","","","",0L,0,0);
     }
 }

@@ -8,6 +8,7 @@ public class RadiusMassage {
     private int radius_acct_status_type;
     private int radius_packet_type;
     private long common_end_time;
+    private int common_vsys_id;
 
     public int getRadius_acct_status_type() {
         return radius_acct_status_type;
@@ -55,5 +56,14 @@ public class RadiusMassage {
 
     public void setCommon_end_time(long common_end_time) {
         this.common_end_time = common_end_time;
+    }
+
+
+    public int getCommon_vsys_id() {
+        return common_vsys_id;
+    }
+
+    public void setCommon_vsys_id(int common_vsys_id) {
+        this.common_vsys_id = common_vsys_id;
     }
 }

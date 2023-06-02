@@ -3,13 +3,13 @@ package com.zdjizhi.utils.functions;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import org.apache.flink.api.common.functions.FilterFunction;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 
-public class FilterNullFunction implements FilterFunction<Tuple6<String,String,String,String,Long,Integer>> {
+public class FilterNullFunction implements FilterFunction<Tuple7<String,String,String,String,Long,Integer,Integer>> {
     private static final Log logger = LogFactory.get();
 
     @Override
-    public boolean filter(Tuple6<String,String,String,String,Long,Integer> message) {
+    public boolean filter(Tuple7<String,String,String,String,Long,Integer,Integer> message) {
         boolean isFilter = false;
         try {
             if (!"".equals(message.f0)) {

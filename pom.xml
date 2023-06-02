@@ -6,7 +6,7 @@
 
     <groupId>com.zdjizhi</groupId>
     <artifactId>radius-relation</artifactId>
-    <version>22-04-01</version>
+    <version>22-10-09</version>
 
     <name>radius-relation</name>
     <url>http://www.example.com</url>
@@ -16,7 +16,7 @@
         <repository>
             <id>nexus</id>
             <name>Team Nexus Repository</name>
-            <url>http://192.168.40.125:8099/content/groups/public</url>
+            <url>http://192.168.40.153:8099/content/groups/public</url>
         </repository>
 
         <repository>
@@ -251,7 +251,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>radius-relation-22-04-01</finalName>
+                            <finalName>radius-relation-22-10-09</finalName>
                             <transformers combine.children="append">
                                 <!-- The service transformer is needed to merge META-INF/services files -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
