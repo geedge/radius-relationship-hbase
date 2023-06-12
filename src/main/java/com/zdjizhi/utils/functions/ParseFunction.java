@@ -2,8 +2,8 @@ package com.zdjizhi.utils.functions;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONException;
 import com.zdjizhi.common.RadiusRelationshipConfig;
 import com.zdjizhi.pojo.RadiusMassage;
 import com.zdjizhi.utils.StringUtil;

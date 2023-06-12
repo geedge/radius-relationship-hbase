@@ -6,7 +6,7 @@
 
     <groupId>com.zdjizhi</groupId>
     <artifactId>radius-relation</artifactId>
-    <version>22-10-09</version>
+    <version>23-06-02</version>
 
     <name>radius-relation</name>
     <url>http://www.example.com</url>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.70</version>
+            <version>2.0.32</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-core -->
@@ -251,7 +251,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>radius-relation-22-10-09</finalName>
+                            <finalName>radius-relation-23-06-02</finalName>
                             <transformers combine.children="append">
                                 <!-- The service transformer is needed to merge META-INF/services files -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
