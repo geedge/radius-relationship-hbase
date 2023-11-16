@@ -61,6 +61,10 @@ public  class   RadiusRelationshipConfig {
     public static final int HBASE_SCAN_LIMIT = RadiusRelationshipConfigurations.getIntProperty(0, "hbase.scan.limit");
     public static final int HBASE_RPC_TIMEOUT = RadiusRelationshipConfigurations.getIntProperty(0, "hbase.rpc.timeout");
 
+    public static final int CACHE_EXPIRE_SECONDS = RadiusRelationshipConfigurations.getIntProperty(0, "cache.expire.seconds");
+    public static final int CACHE_MAX_SIZE = RadiusRelationshipConfigurations.getIntProperty(0, "cache.max.size");
+
+
 
 
 

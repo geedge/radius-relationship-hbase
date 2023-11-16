@@ -1,5 +1,6 @@
 package com.zdjizhi.utils.hbasepackage;
 
+import com.google.common.cache.CacheBuilder;
 import com.zdjizhi.common.RadiusRelationshipConfig;
 import com.zdjizhi.pojo.Radius;
 import org.apache.flink.api.java.tuple.Tuple7;
@@ -15,20 +16,21 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class HbaseSinkFramedip extends RichSinkFunction<Tuple7<String,String,String,String,Long,Integer,Integer>> implements Serializable, SinkFunction<Tuple7<String,String,String,String,Long,Integer,Integer>> {
     private Logger log;
 
     private String hbase_zookeeper_host;
-    public  Map<String, Radius> IpWithAccountMap = new ConcurrentHashMap<>(80000);
+    public  com.google.common.cache.Cache<String, Radius> IpWithAccountMap ;
 
     private Connection connection;
     private Admin admin;
 
     public HbaseSinkFramedip(String hbase_zookeeper_host) {
         this.hbase_zookeeper_host = hbase_zookeeper_host;
+        IpWithAccountMap = CacheBuilder.newBuilder().expireAfterWrite(RadiusRelationshipConfig.CACHE_EXPIRE_SECONDS, TimeUnit.SECONDS).initialCapacity(100000).maximumSize(RadiusRelationshipConfig.CACHE_MAX_SIZE).build();
+
     }
 
     @Override
@@ -99,8 +101,9 @@ public class HbaseSinkFramedip extends RichSinkFunction<Tuple7<String,String,Str
         int acct_status_type = value.f5;
         int vsys_id = value.f6;
 
-            if (IpWithAccountMap.containsKey(key)) {
-                Radius radius = IpWithAccountMap.get(key);
+
+        Radius radius = IpWithAccountMap.getIfPresent(key);
+        if (radius!=null) {
 
                 if (radius.getLast_update_time() <= event_time) {
 
@@ -111,90 +114,59 @@ public class HbaseSinkFramedip extends RichSinkFunction<Tuple7<String,String,Str
                         radius.setAccount(account);
                         radius.setAcct_status_type(acct_status_type);
                         radius.setVsys_id(vsys_id);
+                        radius.setFramed_ip(framedIp);
+                        updateRelationMessage(key, radius);
 
-                        Table table = null;
-                        try {
-                            table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_FRAMEDIP_TABLE_NAME));
-                            Put put = new Put(key.getBytes());
-                            put.addColumn("radius".getBytes(), "framed_ip".getBytes(), framedIp.getBytes());
-                            put.addColumn("radius".getBytes(), "account".getBytes(), account.getBytes());
-                            put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
-                            put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(radius.getFirst_found_time()));
-                            put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
-                            put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
-
-                            table.put(put);
-                            IpWithAccountMap.put(key, radius);
-                        } catch (Exception e) {
-                            log.error(e.toString());
-                        } finally {
-                            table.close();
-                        }
                     }
                 }
                     else{
                         radius.setLast_update_time(event_time);
-                        radius.setFramed_ip(framedIp);
+                        radius.setAccount(account);
                         radius.setAcct_status_type(acct_status_type);
                         radius.setVsys_id(vsys_id);
-                        Table table = null;
-                        try {
-                            table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_FRAMEDIP_TABLE_NAME));
-                            Put put = new Put(key.getBytes());
-                            put.addColumn("radius".getBytes(), "framed_ip".getBytes(), framedIp.getBytes());
-                            put.addColumn("radius".getBytes(), "account".getBytes(), account.getBytes());
-                            put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
-                            put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(radius.getFirst_found_time()));
-                            put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
-                            put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
-
-                            table.put(put);
-                            IpWithAccountMap.put(key, radius);
-                        } catch (Exception e) {
-                            log.error(e.toString());
-                        } finally {
-                            table.close();
-                        }
+                        radius.setFramed_ip(framedIp);
+                        updateRelationMessage(key, radius);
 
                     }
-
-
                 }
             }
             else {
-                Radius radius = new Radius();
+                radius = new Radius();
                 radius.setFramed_ip(framedIp);
                 radius.setLast_update_time(event_time);
                 radius.setAccount(account);
                 radius.setFirst_found_time(event_time);
                 radius.setAcct_status_type(acct_status_type);
                 radius.setVsys_id(vsys_id);
-                Table table = null;
-                try {
-                    table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_FRAMEDIP_TABLE_NAME));
-                    Put put = new Put(key.getBytes());
-                    put.addColumn("radius".getBytes(), "framed_ip".getBytes(), framedIp.getBytes());
-                    put.addColumn("radius".getBytes(), "account".getBytes(), account.getBytes());
-                    put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(event_time));
-                    put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(event_time));
-                    put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(acct_status_type));
-                    put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(vsys_id));
+                updateRelationMessage(key, radius);
 
-                    table.put(put);
-
-                    IpWithAccountMap.put(key, radius);
-                } catch (Exception e) {
-                    log.error(e.toString());
-                } finally {
-                    table.close();
-                }
-            }
+        }
 
     }
 
     @Override
     public void close() throws Exception {
         super.close();
+    }
+
+
+    public void updateRelationMessage(String key, Radius radius) throws IOException {
+
+        try (Table table = connection.getTable(TableName.valueOf(RadiusRelationshipConfig.HBASE_FRAMEDIP_TABLE_NAME))) {
+            Put put = new Put(key.getBytes());
+            put.addColumn("radius".getBytes(), "framed_ip".getBytes(), radius.getFramed_ip().getBytes());
+            put.addColumn("radius".getBytes(), "account".getBytes(), radius.getAccount().getBytes());
+            put.addColumn("radius".getBytes(), "last_update_time".getBytes(), Bytes.toBytes(radius.getLast_update_time()));
+            put.addColumn("radius".getBytes(), "first_found_time".getBytes(), Bytes.toBytes(radius.getFirst_found_time()));
+            put.addColumn("radius".getBytes(), "acct_status_type".getBytes(), Bytes.toBytes(radius.getAcct_status_type()));
+            put.addColumn("common".getBytes(), "vsys_id".getBytes(), Bytes.toBytes(radius.getVsys_id()));
+            table.put(put);
+            IpWithAccountMap.put(key, radius);
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
+
+
     }
 
     /**
